@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Visualization of Spin-Orbital Angular Momentum</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        .heading {
+            display: flex;
+            justify-content: center;
+
+        }
+    </style>
+</head>
+<body>
+    <h1 class="heading">3D Visualization of Spin-Orbital Angular Momentum</h1>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Set up the scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        // Set the size and background color
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xffffff); // Set background color to white
+        document.body.appendChild(renderer.domElement);
+        
+        // Create objects
+        const nucleusGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const nucleusMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+        scene.add(nucleus);
+        
+        const electronGeometry = new THREE.SphereGeometry(0.05, 32, 32);
+        const electronMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+        const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+        scene.add(electron);
+
+        // Create arrows for spin and orbital angular momentum
+        const arrowLength = 0.5;
+        
+        const orbitArrowMaterial = new THREE.LineBasicMaterial({ color: 0xffa500 });
+        const spinArrowMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+
+        // Function to create an arrow
+        function createArrow(start, end, material) {
+            const points = [];
+            points.push(start.clone());
+            points.push(end.clone());
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            return new THREE.Line(geometry, material);
+        }
+
+        let orbitArrow = createArrow(nucleus.position, new THREE.Vector3(0.5, 0, 0), orbitArrowMaterial);
+        let spinArrow = createArrow(electron.position, electron.position.clone().add(new THREE.Vector3(0.1, 0, 0)), spinArrowMaterial);
+
+        scene.add(orbitArrow);
+        scene.add(spinArrow);
+
+        // Animation parameters
+        let time = 0;
+        const orbitRadius = 1;
+        const spinSpeed = 2;   // Adjust spin speed for electron's spin
+        const orbitSpeed = 0.5; // Adjust orbital speed for the electron around nucleus
+
+        // Position the camera above the scene and point it downwards
+        camera.position.set(0, 3, 0);  // Move the camera up along the y-axis
+        camera.lookAt(0, 0, 0);        // Make the camera look at the origin
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            time += 0.01;
+
+            // Calculate electron's position (circular orbit around the nucleus)
+            const x = orbitRadius * Math.cos(orbitSpeed * time);
+            const z = orbitRadius * Math.sin(orbitSpeed * time);
+            electron.position.set(x, 0, z);
+
+            // Update orbital angular momentum arrow
+            orbitArrow.geometry.setFromPoints([nucleus.position.clone(), electron.position.clone()]);
+
+            // Spin angular momentum arrow (spinning around the electron)
+            spinArrow.geometry.setFromPoints([electron.position.clone(), 
+                electron.position.clone().add(new THREE.Vector3(0.1 * Math.cos(spinSpeed * time), 
+                0.1 * Math.sin(spinSpeed * time), 0))]);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
